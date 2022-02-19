@@ -64,9 +64,9 @@ namespace KSPPreciseManeuver.UI {
         m_ToggleAlarm.GetComponent<Image> ().color = new Color (1.0f, 1.0f, 1.0f, 1.0f);
         m_ToggleAlarm.isOn = m_Control.AlarmEnabled;
       } else {
-        m_ToggleAlarm.interactable = false;
-        m_ToggleAlarm.GetComponent<Image> ().color = new Color (0.0f, 0.0f, 0.0f, 0.25f);
-        m_ToggleAlarm.isOn = false;
+        m_ToggleAlarm.interactable = true;
+        m_ToggleAlarm.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+        m_ToggleAlarm.isOn = m_Control.AlarmEnabled;
       }
     }
   }

@@ -72,36 +72,57 @@ namespace KSPPreciseManeuver {
 
     private Orbit target = null;
 
-    #region KAC integration
+    #region KAC/ACA integration
 
-    private KACWrapper.KACAPI.KACAlarm currentAlarm = null;
+    private KACWrapper.KACAPI.KACAlarm currentKACAlarm = null;
+    private AlarmTypeManeuver currentACAAlarm = null;
 
     internal void CreateAlarm () {
-      if (!KACWrapper.APIReady)
-        return;
+            if (!KACWrapper.APIReady)
+            {
+                if (currentACAAlarm != null)
+                    return;
+                currentACAAlarm = new AlarmTypeManeuver();
+                currentACAAlarm.Maneuver = CurrentNode;
+                currentACAAlarm.title = KSP.Localization.Localizer.Format("precisemaneuver_KAC_name", FlightGlobals.ActiveVessel.GetName());
+                currentACAAlarm.description = KSP.Localization.Localizer.Format("precisemaneuver_KAC_note");
+                currentACAAlarm.vesselId = FlightGlobals.ActiveVessel.persistentId;
+                currentACAAlarm.marginEntry = 600;
+                //alarm.ut = CurrentNode.UT;
+                //alarm.vesselName = FlightGlobals.ActiveVessel.GetName();
+                //currentACAAlarm.useBurnTimeMargin = true;
+                AlarmClockScenario.AddAlarm(currentACAAlarm);
 
-      if (currentAlarm != null)
-        return;
+                return;
+            }
+            else
+            {
+                if (currentKACAlarm != null)
+                    return;
 
-      string newID = KACWrapper.KAC.CreateAlarm (KACWrapper.KACAPI.AlarmTypeEnum.Maneuver,
-                                               KSP.Localization.Localizer.Format ("precisemaneuver_KAC_name", FlightGlobals.ActiveVessel.GetName()),
-                                               CurrentNode.UT - 600.0);
-            currentAlarm = KACWrapper.KAC.Alarms.First (a => a.ID == newID);
-
-      currentAlarm.VesselID = FlightGlobals.ActiveVessel.id.ToString ();
-      currentAlarm.Notes = KSP.Localization.Localizer.Format ("precisemaneuver_KAC_note");
-      currentAlarm.AlarmMargin = 600;
+                string newID = KACWrapper.KAC.CreateAlarm(KACWrapper.KACAPI.AlarmTypeEnum.Maneuver,
+                                                         KSP.Localization.Localizer.Format("precisemaneuver_KAC_name", FlightGlobals.ActiveVessel.GetName()),
+                                                         CurrentNode.UT - 600.0);
+                currentKACAlarm = KACWrapper.KAC.Alarms.First(a => a.ID == newID);
+                currentKACAlarm.VesselID = FlightGlobals.ActiveVessel.id.ToString();
+                currentKACAlarm.Notes = KSP.Localization.Localizer.Format("precisemaneuver_KAC_note");
+                currentKACAlarm.AlarmMargin = 600;
+            }
     }
 
     internal void DeleteAlarm () {
-      if (currentAlarm != null) {
-        KACWrapper.KAC.DeleteAlarm (currentAlarm.ID);
-        currentAlarm = null;
+      if (currentKACAlarm != null) {
+        KACWrapper.KAC.DeleteAlarm (currentKACAlarm.ID);
+        currentKACAlarm = null;
+      }
+      if (currentACAAlarm != null) {
+        AlarmClockScenario.DeleteAlarm(currentACAAlarm);
+        currentACAAlarm = null;
       }
     }
 
     internal bool AlarmCreated () {
-      return currentAlarm != null;
+      return currentKACAlarm != null || currentACAAlarm != null;
     }
 
     #endregion
@@ -467,7 +488,7 @@ namespace KSPPreciseManeuver {
         currentSavedNode = new SavedNode (CurrentNode);
       /* update KAC alarm */
       if (KACWrapper.APIReady)
-        currentAlarm = KACWrapper.KAC.Alarms.FirstOrDefault
+        currentKACAlarm = KACWrapper.KAC.Alarms.FirstOrDefault
                                     (a => ((Math.Abs (a.AlarmTime + 600.0 - CurrentNode.UT) < 1E-05) &&
                                            (a.VesselID == FlightGlobals.ActiveVessel.id.ToString ()) &&
                                            (a.AlarmType == KACWrapper.KACAPI.AlarmTypeEnum.Maneuver)));
